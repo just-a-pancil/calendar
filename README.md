@@ -38,8 +38,12 @@ If you have any questions or ideas about product development, reach out to me in
 ## Result
 ### Initial state
 <img src="media/image-4.png" alt="alt text" width="250" height="w">
-<img src="media/image-3.png" alt="alt text"  height="350">
+
+![](media/image-3.png)
+<!-- <img src="media/image-3.png" alt="alt text"  height="350"> -->
 
 ### Script performed
 <img src="media/image-7.png" alt="alt text" width="250" height="w">
-<img src="media/image-8.png" alt="alt text" width="w" height="350">
+
+![](media/image-8.png)
+<!-- <img src="media/image-8.png" alt="alt text" width="w" height="350"> -->
