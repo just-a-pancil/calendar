@@ -1,39 +1,56 @@
 import requests
 from datetime import datetime, timedelta
 import os
+import json
+import traceback
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
+import decouple
 
 # Google Calendar API configuration
 load_dotenv()
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-CALENDAR_MAIN_ID = os.getenv('CALENDAR_MAIN_ID')
-CALENDAR_TASKS_ID = os.getenv('CALENDAR_TASKS_ID')
-START_TIME = '2024-05-13T00:00:00+04:00'
+CALENDAR_MAIN_ID = decouple.config('CALENDAR_MAIN_ID')
+CALENDAR_TASKS_ID = decouple.config('CALENDAR_TASKS_ID')
+START_TIME = '2024-08-13T00:00:00+04:00'
+PLUGIN_ID = "655f68bed3dee74f143b8c5a"
 
 # Trello API configuration
-API_KEY = os.getenv('API_KEY')
-TOKEN = os.getenv('TOKEN')
-LIST_ID = os.getenv('LIST_ID')
-ESTIMATE_FIELD_ID = os.getenv('ESTIMATE_FIELD_ID')
+API_KEY = decouple.config('API_KEY')
+TOKEN = decouple.config('TOKEN')
+LIST_ID = decouple.config('LIST_ID')
+ESTIMATE_FIELD_ID = decouple.config('ESTIMATE_FIELD_ID')
 
 base_url = "https://api.trello.com/1/"
 cards_url = f"{base_url}lists/{LIST_ID}/cards/?customFieldItems=true"
 auth_params = {'key': API_KEY, 'token': TOKEN}
+
+
+def get_estimate_from_card(card):
+    card_url = f"https://api.trello.com/1/cards/{card['id']}/pluginData"
+    response = requests.get(card_url,params=auth_params)
+    pluginData = response.json()
+    for p in pluginData:
+        if not (p["idPlugin"] == PLUGIN_ID): continue
+        else: 
+            estimate = json.loads(p["value"])["PU_ANY_FIELDS-badges"]
+            if estimate: 
+                estimate = estimate[0].get("v")
+                return int(estimate)
+            else: return 0
+
 
 def get_cards_with_estimate():
     response = requests.get(cards_url, params=auth_params)
     cards = response.json()
     for card in cards:
         estimate = 0
-        for item in card['customFieldItems']:
-            if item['idCustomField'] == ESTIMATE_FIELD_ID:
-                try:
-                    estimate = int(item['value']['number'])
-                except (KeyError, ValueError):
-                    print("Error extracting estimate")
+        try: 
+            estimate = get_estimate_from_card(card)
+        except: 
+            print(traceback.format_exc())
         card['estimated_hours'] = estimate
     return cards
 
@@ -79,7 +96,7 @@ def authenticate_google_calendar():
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     if not creds or not creds.valid:
         print("No valid credentials found, requesting new token")
-        flow = Flow.from_client_secrets_file('client_secret_2.json', SCOPES, redirect_uri='http://localhost:1')
+        flow = Flow.from_client_secrets_file('client_secret_2.json', SCOPES, redirect_uri='http://localhost:8012')
         auth_url, _ = flow.authorization_url(prompt='consent')
         print('Please go to this URL: {}'.format(auth_url))
         code = input('Enter the authorization code: ')
@@ -91,18 +108,8 @@ def authenticate_google_calendar():
 
 def process_trello_cards(cards):
     for card in cards:
-        for item in card['customFieldItems']:
-            # Check if this item's idCustomField matches our target
-            if item['idCustomField'] == ESTIMATE_FIELD_ID:
-                # If a match is found, extract the number from the value dictionary
-                try:
-                    estimate = int(item['value']['number'])
-                except (KeyError, ValueError):
-                    # Handle cases where the number field is missing or is not an integer
-                    print("Error extracting estimate")
-                    exit()
-                break  # Stop the loop after finding the target field
-        card['estimated_hours'] = estimate
+        try: card['estimated_hours'] = get_estimate_from_card(card)
+        except: print(traceback.format_exc())
     return cards
 
 def update_card_dates(card_id, start_date, end_date):
