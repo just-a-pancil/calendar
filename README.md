@@ -35,6 +35,9 @@ If you have any questions or ideas about product development, reach out to me in
 
 **Note**: This script is a personal draft and requires customization. An easy-to-use version will be developed later.
 
+### Additional info
+Please, feel free to create issues and ask questions
+
 ## Result
 ### Initial state
 <img src="media/image-4.png" alt="alt text" width="250" height="w">
