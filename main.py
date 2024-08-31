@@ -21,7 +21,6 @@ PLUGIN_ID = "655f68bed3dee74f143b8c5a"
 API_KEY = decouple.config('API_KEY')
 TOKEN = decouple.config('TOKEN')
 LIST_ID = decouple.config('LIST_ID')
-ESTIMATE_FIELD_ID = decouple.config('ESTIMATE_FIELD_ID')
 
 base_url = "https://api.trello.com/1/"
 cards_url = f"{base_url}lists/{LIST_ID}/cards/?customFieldItems=true"
